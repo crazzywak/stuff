@@ -1,0 +1,54 @@
+_cdb_completion()
+{
+    if [[ ${COMP_CWORD} -gt 1 ]]; then COMPREPLY=(); return 0; exit; fi
+
+    opts=$(find  ~/.cd_bookmarks/ -type l -printf "%f ")
+    cur="${COMP_WORDS[COMP_CWORD]}"
+
+    COMPREPLY=( $(compgen -W "${opts}" -- ${cur}) )
+
+    return 0
+}
+
+complete -F _cdb_completion "cdb"
+
+function cdb() {
+    USAGE="Usage: cdb [-c|-g|-d|-l] [bookmark]" ;
+    if  [ ! -e ~/.cd_bookmarks ] ; then
+        mkdir ~/.cd_bookmarks
+    fi
+
+    if [ -z "$1" ] ; then
+        ll ~/.cd_bookmarks/
+        return
+    fi
+
+    case $1 in
+        # create bookmark
+        -c) shift
+            if [ ! -f ~/.cd_bookmarks/$1 ] ; then
+                ln -s $(pwd) ~/.cd_bookmarks/$1 ;
+            else
+                echo "Looks like there is already a bookmark '$1'"
+            fi
+            ;;
+        # delete bookmark
+        -d) shift
+            if [ -L ~/.cd_bookmarks/$1 ] ; then 
+                rm ~/.cd_bookmarks/$1 ;
+            else
+                echo "Bookmark $1 doesn't exist." ;
+            fi    
+            ;;
+        # help
+        -?) echo "$USAGE" ;
+            ;;
+        # goto bookmark
+        *) if [ -e ~/.cd_bookmarks/$1 ] ; then 
+                cd `readlink -f ~/.cd_bookmarks/$1`
+            else
+                echo "Bookmark $1 doesn't exist." ;
+            fi
+            ;;
+    esac
+}
