@@ -40,6 +40,38 @@ function cdb() {
                 echo "Bookmark $1 doesn't exist." ;
             fi    
             ;;
+        -e) shift
+            echo "CDBOOKMARKS" > $1
+            for f in ~/.cd_bookmarks/*
+            do
+                echo "$(basename $f),$(readlink $f)"
+            done >>$1
+            ;;
+        -if) FORCE_IMPORT=1
+            ;&
+        -i) shift
+            firstLine=1
+            while read p || [[ -n $p ]]; do
+                if [ $firstLine -eq 1 ]; then
+                    if [ $p != "CDBOOKMARKS" ]; then
+                        echo "Not a bookmarks file."
+                        return
+                    fi
+
+                    firstLine=0
+                    continue
+                fi
+
+                var1=$(echo $p | cut -f1 -d,)
+                var2=$(echo $p | cut -f2 -d,)
+                if [ -z "$FORCE_IMPORT" ] && [ -e ~/.cd_bookmarks/$var1 ]; then
+                    echo "Bookmark $var1 already exists."
+                else
+                    echo "Importing $var1..."
+                    ln -sf $var2 ~/.cd_bookmarks/$var1
+                fi
+            done <$1
+            ;;
         # help
         -?) echo "$USAGE" ;
             ;;
