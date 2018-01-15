@@ -1,6 +1,6 @@
 _cdb_completion()
 {
-    if [[ ${COMP_CWORD} -gt 1 ]]; then COMPREPLY=(); return 0; exit; fi
+    #if [[ ${COMP_CWORD} -gt 1 ]]; then COMPREPLY=(); return 0; exit; fi
 
     opts=$(find  ~/.cd_bookmarks/ -type l -printf "%f ")
     cur="${COMP_WORDS[COMP_CWORD]}"
@@ -24,9 +24,16 @@ function cdb() {
     fi
 
     case $1 in
+        # update script
+        -u) wget -O ~/.cdb https://raw.githubusercontent.com/crazzywak/stuff/master/.cdb
+            source ~/.cdb
+            ;;
         # create bookmark
         -c) shift
-            if [ ! -f ~/.cd_bookmarks/$1 ] ; then
+            if [ ! -L ~/.cd_bookmarks/$1 ] ; then
+                local current_dir=$(pwd)
+                local bookmark_name=$1
+                echo "Creating bookmark for '$current_dir' with name '$bookmark_name'..."
                 ln -s $(pwd) ~/.cd_bookmarks/$1 ;
             else
                 echo "Looks like there is already a bookmark '$1'"
@@ -46,6 +53,8 @@ function cdb() {
             do
                 echo "$(basename $f),$(readlink $f)"
             done >>$1
+            ;;
+        -g) readlink -f ~/.cd_bookmarks/$2
             ;;
         -if) FORCE_IMPORT=1
             ;&
