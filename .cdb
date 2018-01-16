@@ -32,9 +32,10 @@ function cdb() {
         -c) shift
             if [ ! -L ~/.cd_bookmarks/$1 ] ; then
                 local current_dir=$(pwd)
+                if [ ! -z "$2" ]; then current_dir=$(readlink -f $2); fi
                 local bookmark_name=$1
                 echo "Creating bookmark for '$current_dir' with name '$bookmark_name'..."
-                ln -s $(pwd) ~/.cd_bookmarks/$1 ;
+                ln -s $current_dir ~/.cd_bookmarks/$1 ;
             else
                 echo "Looks like there is already a bookmark '$1'"
             fi
@@ -86,7 +87,16 @@ function cdb() {
             ;;
         # goto bookmark
         *) if [ -e ~/.cd_bookmarks/$1 ] ; then 
-                cd `readlink -f ~/.cd_bookmarks/$1`
+                real_path=$(readlink -f ~/.cd_bookmarks/$1);
+                if [ ! -z "$2" ]; then
+                    $2 $real_path
+                else
+                    if [ -d $real_path ]; then
+                        cd $real_path
+                    else
+                        vim $real_path
+                    fi
+                fi
             else
                 echo "Bookmark $1 doesn't exist." ;
             fi
