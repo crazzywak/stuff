@@ -128,10 +128,13 @@ function yacopy()
                 esac
             done
 
+            [ $result == "yes" ] && cp -f $x $matchedFile
             [ $result != "no" ] && break
         done
 
-        if [ $result == "no" ]; then
+        if [ -z "$FILES" ]; then
+            echo "File not found."
+        elif [ $result == "no" ]; then
             echo "Skipped $x because all target files have been tried."
         fi
     done
