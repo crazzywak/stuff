@@ -103,3 +103,48 @@ function cdb() {
             ;;
     esac
 }
+
+
+function yacopy()
+{
+    local result;
+    local yn;
+
+    for x in "${@:2}"
+    do
+        FILES=$(find $1 -name $(basename $x))
+        echo "Copying $x"
+        for matchedFile in $FILES
+        do
+            result="bad"
+            while [ $result == "bad" ];
+            do
+                read -p "Replace $matchedFile? (y/n/s)" yn
+                case $yn in
+                    [Yy]* ) result="yes";;
+                    [Nn]* ) result="no";;
+                    [Ss]* ) result="skip";;
+                    * ) result="bad";;
+                esac
+            done
+
+            [ $result != "no" ] && break
+        done
+
+        if [ $result == "no" ]; then
+            echo "Skipped $x because all target files have been tried."
+        fi
+    done
+}
+
+foreachdir() {
+        for x in "${@:2}"
+        do
+                if pushd $x &> /dev/null
+                then
+                        echo "$(tput setaf 2)-----------------------------------------> $x $(tput sgr 0)"
+                        $1
+                        popd &> /dev/null
+                fi
+        done
+}
