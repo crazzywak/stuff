@@ -23,10 +23,13 @@ function cdb() {
         return
     fi
 
+    local UPDATE_CODE="wget -O ~/.cdb https://raw.githubusercontent.com/crazzywak/stuff/master/.cdb && source ~/.cdb"
+
     case $1 in
+	-p) echo $UPDATE_CODE
+	    ;;
         # update script
-        -u) wget -O ~/.cdb https://raw.githubusercontent.com/crazzywak/stuff/master/.cdb
-            source ~/.cdb
+        -u) eval $UPDATE_CODE
             ;;
         # create bookmark
         -c) shift
@@ -49,11 +52,14 @@ function cdb() {
             fi    
             ;;
         -e) shift
-            echo "CDBOOKMARKS" > $1
+            local output="CDBOOKMARKS\n"
             for f in ~/.cd_bookmarks/*
             do
-                echo "$(basename $f),$(readlink $f)"
-            done >>$1
+                output+="$(basename $f),$(readlink $f)\n"
+            done
+            printf "${output}\n"
+            printf "$output" | gzip | base64 -w0
+            printf "\n"
             ;;
         -g) readlink -f ~/.cd_bookmarks/$2
             ;;
@@ -61,7 +67,14 @@ function cdb() {
             ;&
         -i) shift
             firstLine=1
-            while read p || [[ -n $p ]]; do
+            lines=$(echo "$1" | base64 -d | gunzip)
+            printf "$lines\n\n"
+            read -p "Import? " -n 1 -r
+            echo
+            if ! [[ $REPLY =~ ^[Yy]$ ]]; then return; fi
+            
+            for p in $lines
+            do
                 if [ $firstLine -eq 1 ]; then
                     if [ $p != "CDBOOKMARKS" ]; then
                         echo "Not a bookmarks file."
@@ -77,10 +90,10 @@ function cdb() {
                 if [ -z "$FORCE_IMPORT" ] && [ -e ~/.cd_bookmarks/$var1 ]; then
                     echo "Bookmark $var1 already exists."
                 else
-                    echo "Importing $var1..."
+                    echo "Importing $var1... "
                     ln -sf $var2 ~/.cd_bookmarks/$var1
                 fi
-            done <$1
+            done
             ;;
         # help
         -?) echo "$USAGE" ;
