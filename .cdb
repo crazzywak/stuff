@@ -33,15 +33,19 @@ function cdb() {
             ;;
         # create bookmark
         -c) shift
-            if [ ! -L ~/.cd_bookmarks/$1 ] ; then
-                local current_dir=$(pwd)
-                if [ ! -z "$2" ]; then current_dir=$(readlink -f $2); fi
-                local bookmark_name=$1
-                echo "Creating bookmark for '$current_dir' with name '$bookmark_name'..."
-                ln -s $current_dir ~/.cd_bookmarks/$1 ;
-            else
-                echo "Looks like there is already a bookmark '$1'"
+            if [ -L ~/.cd_bookmarks/$1 ] ; then
+                read -p "Looks like there is already a bookmark '$1'. Replace? " -n 1 -r
+                echo
+                if ! [[ $REPLY =~ ^[Yy]$ ]]; then return; fi
+
+                rm ~/.cd_bookmarks/$1 ;
             fi
+
+            local current_dir=$(pwd)
+            if [ ! -z "$2" ]; then current_dir=$(readlink -f $2); fi
+            local bookmark_name=$1
+            echo "Creating bookmark for '$current_dir' with name '$bookmark_name'..."
+            ln -sf $current_dir ~/.cd_bookmarks/$1 ;
             ;;
         # delete bookmark
         -d) shift
