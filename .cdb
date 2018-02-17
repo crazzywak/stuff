@@ -168,3 +168,33 @@ foreachdir() {
                 fi
         done
 }
+
+function install_samba()
+{
+    sudo chkconfig iptables off
+    sudo chkconfig ip6tables off
+    yum install samba
+
+    cat > /etc/samba/smb.conf <<-'EOF'
+
+[global]
+
+        workgroup = ALGOSEC
+        server string = Samba Server Version %v
+        log file = /var/log/samba/log.%m
+        max log size = 50
+        security = user
+        map to guest = bad user
+        protocol = SMB2
+
+[MyShare]
+        path = /
+        browsable = yes
+        writable = yes
+        guest ok = yes
+        read only = no
+
+EOF
+
+    service smb restart
+}
