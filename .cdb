@@ -122,7 +122,7 @@ function cdb() {
 }
 
 
-function yacopy()
+function ykd_copy()
 {
     local result;
     local yn;
@@ -157,7 +157,7 @@ function yacopy()
     done
 }
 
-foreachdir() {
+function ykd_foreachdir() {
         for x in "${@:2}"
         do
                 if pushd $x &> /dev/null
@@ -169,7 +169,7 @@ foreachdir() {
         done
 }
 
-function install_samba()
+function ykd_install_samba()
 {
     sudo chkconfig iptables off
     sudo chkconfig ip6tables off
@@ -197,4 +197,24 @@ function install_samba()
 EOF
 
     service smb restart
+}
+
+function ykd_check_ff_upgrades
+{
+	declare -A upgrades
+
+	for d in /usr/share/fireflow/local/etc/upgrade/*
+	do
+		basen=$(basename $d)
+		upgrades["$basen"]="1"
+	done
+
+	local i=1
+	PGPASSWORD=algosec1 psql -U postgres -d rt3 -c "SELECT version FROM databaseversion" | while read -a row ; do
+		#row=$(echo $row | xargs)
+		if [[ $row =~ ^[0-9].* ]] && [[ ! ${upgrades[$row]+abc} ]]; then
+			echo $row
+		fi
+		i=$i+1
+	done
 }
