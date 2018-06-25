@@ -23,7 +23,7 @@ function cdb() {
         return
     fi
 
-    local UPDATE_CODE="wget -O ~/.cdb https://raw.githubusercontent.com/crazzywak/stuff/master/.cdb && source ~/.cdb && sudo wget -O ~/.cdbroot https://raw.githubusercontent.com/crazzywak/stuff/master/.cdbroot && source ~/.cdbroot"
+    local UPDATE_CODE="wget -O ~/.cdb https://raw.githubusercontent.com/crazzywak/stuff/master/.cdb && source ~/.cdb && sudo bash -c \"wget -O ~/.cdbroot https://raw.githubusercontent.com/crazzywak/stuff/master/.cdbroot\" && sudo bash -c \"source ~/.cdbroot\""
 
     case $1 in
 	-p) echo $UPDATE_CODE
