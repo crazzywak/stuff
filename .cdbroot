@@ -1,0 +1,208 @@
+function debug-redirect-perl {
+    EXECUTABLE=/usr/bin/perl
+    LOG_FILE=/tmp/debug-redirect.log
+    DEBUG_PATTERN="$1"
+ 
+    if [[ "$1" == "--help" ]] ; then
+        echo 'Usage:    debug-redirect-perl                      - Log every perl execution into "'"$LOG_FILE"'"'
+        echo '          debug-redirect-perl [DEBUG-PATTERN]      - ...and also debug any perl-file that contains this pattern'
+        echo '          debug-redirect-perl -r                   - Revent'
+        return 0
+    fi
+ 
+    if [[ "$1" == "-r" ]] ; then
+        if [[ ! -f "$EXECUTABLE.debug-redirect-orig" ]] ; then
+            echo "Nothing to revert"
+        else
+            echo "Reverting to normal"
+            mv -f "$EXECUTABLE.debug-redirect-orig" "$EXECUTABLE" || return 1
+        fi
+        return 0
+    fi
+ 
+    if ! which gcc >& /dev/null ; then
+        echo "Installing gcc..."
+        yum install -y gcc || return 1
+    fi
+    if ! which c++ >& /dev/null ; then
+        echo "Installing gcc-c++..."
+        yum install -y gcc-c++ || return 1
+    fi
+    if ! which ptked >& /dev/null ; then
+        echo "Installing perl-Tk..."
+        yum install -y perl-Tk || return 1
+    fi
+    if ! perl -d:ptkdb /dev/null >& /dev/null ; then
+        echo "Installing Devel::ptkdb..."
+        ( for (( i = 0 ; i < 30 ; i++ )) ; do echo ; done ; echo http://www.cpan.org ; echo ) |
+        cpan Devel::ptkdb || return 1
+    fi
+ 
+    if [[ -z "$DEBUG_PATTERN" ]] ; then
+        echo "No debug-pattern"
+    elif [[ -z "$DISPLAY" ]] ; then
+        echo "Debug-pattern is "'"'"$DEBUG_PATTERN"'"'" - but \$DISPLAY is not set..." 1>&2
+        return 1
+    else
+        echo "Debug-pattern is "'"'"$DEBUG_PATTERN"'"'", \$DISPLAY is "'"'"$DISPLAY"'"'
+    fi
+ 
+    cat > /tmp/debug-redirect.cpp <<EOF
+        #include <limits.h>
+        #include <stdlib.h>
+        #include <stdio.h>
+        #include <unistd.h>
+        #include <string.h>
+        #include <time.h>
+        #include <sys/types.h>
+        #include <sys/stat.h>
+        #include <string>
+ 
+        #define EXECUTABLE "$EXECUTABLE.debug-redirect-orig"
+        #define LOG_FILE   "$LOG_FILE"
+ 
+        int main(int argc, char** argv) {
+            unsigned i;
+ 
+            std::string fullCommand;
+            for (i = 0; i < argc; i++) {
+                fullCommand += argv[i];
+                fullCommand += ' ';
+            }
+ 
+            bool debug = (sizeof("$DEBUG_PATTERN") > 1) && (strstr(fullCommand.c_str(), "$DEBUG_PATTERN") != NULL);
+ 
+            mode_t origUMask = umask(0);   // So that the log-file has mod 666
+            FILE * logFile = fopen(LOG_FILE, "a");
+            umask(origUMask);
+            if (debug)
+                fprintf(logFile, "================================  DEBUG  ================================\n");
+            else
+                fprintf(logFile, "=========================================================================\n");
+            fprintf(logFile, "%s\n", fullCommand.c_str());
+            fprintf(logFile, "CWD:  %s\n", get_current_dir_name());
+            time_t now = time(0);
+            fprintf(logFile, "TIME: %s", ctime(&now));
+            fprintf(logFile, "PROG: %s\n", argv[1]);
+            for (i = 2; i < argc; i++)
+                fprintf(logFile, "ARG-%-3u  %s\n", i - 1, argv[i]);
+            fclose(logFile);
+ 
+            char** effectiveArgv = (char**)malloc((argc + 2) * sizeof(char*));
+            char** effectiveArgvScan = effectiveArgv;
+            *(effectiveArgvScan++) = (char*)EXECUTABLE;
+            if (debug)
+                *(effectiveArgvScan++) = (char*)"-d:ptkdb";   // Perl debug flag
+            memcpy(effectiveArgvScan, argv + 1, (argc - 1) * sizeof(char*));
+            effectiveArgvScan += argc - 1;
+            *effectiveArgvScan = NULL;
+ 
+            if (debug)
+                setenv("DISPLAY", "$DISPLAY", 1);
+ 
+            return execv(effectiveArgv[0], effectiveArgv);
+        }
+EOF
+ 
+    if gcc /tmp/debug-redirect.cpp -lstdc++ -o /tmp/debug-redirect ; then
+        if [[ ! -f "$EXECUTABLE.debug-redirect-orig" ]] ; then
+            ln "$EXECUTABLE" "$EXECUTABLE.debug-redirect-orig"
+        fi
+        if mv -f /tmp/debug-redirect "$EXECUTABLE" ; then
+            rm -f /tmp/debug-redirect.cpp
+            echo "Done. All calls to "'"'"$EXECUTABLE"'"'" will be logged into "'"'"$LOG_FILE"'"'
+            echo "To revert - execute:     debug-redirect-perl -r"
+        fi
+    fi
+    return 0
+}
+ 
+ 
+ 
+function debug-redirect-bash {
+    EXECUTABLE=/bin/bash
+    LOG_FILE=/tmp/debug-redirect.log
+ 
+    if [[ "$1" == "--help" ]] ; then
+        echo 'Usage:    debug-redirect-bash                      - Log every bash execution into "'"$LOG_FILE"'"'
+        echo '          debug-redirect-bash -r                   - Revent'
+        return 0
+    fi
+ 
+    if [[ "$1" == "-r" ]] ; then
+        if [[ ! -f "$EXECUTABLE.debug-redirect-orig" ]] ; then
+            echo "Nothing to revert"
+        else
+            echo "Reverting to normal"
+            mv -f "$EXECUTABLE.debug-redirect-orig" "$EXECUTABLE" || return 1
+        fi
+        return 0
+    fi
+ 
+    if ! which gcc >& /dev/null ; then
+        echo "Installing gcc..."
+        yum install -y gcc || return 1
+    fi
+    if ! which c++ >& /dev/null ; then
+        echo "Installing gcc-c++..."
+        yum install -y gcc-c++ || return 1
+    fi
+ 
+    cat > /tmp/debug-redirect.cpp <<EOF
+        #include <limits.h>
+        #include <stdlib.h>
+        #include <stdio.h>
+        #include <unistd.h>
+        #include <string.h>
+        #include <time.h>
+        #include <sys/types.h>
+        #include <sys/stat.h>
+        #include <string>
+ 
+        #define EXECUTABLE "$EXECUTABLE.debug-redirect-orig"
+        #define LOG_FILE   "$LOG_FILE"
+ 
+        int main(int argc, char** argv) {
+ 
+            std::string fullCommand;
+            for (unsigned i = 0; i < argc; i++) {
+                fullCommand += argv[i];
+                fullCommand += ' ';
+            }
+ 
+            mode_t origUMask = umask(0);   // So that the log-file has mod 666
+            FILE * logFile = fopen(LOG_FILE, "a");
+            umask(origUMask);
+            fprintf(logFile, "=========================================================================\n");
+            fprintf(logFile, "%s\n", fullCommand.c_str());
+            fprintf(logFile, "CWD:  %s\n", get_current_dir_name());
+            time_t now = time(0);
+            fprintf(logFile, "TIME: %s", ctime(&now));
+            fprintf(logFile, "PROG: %s\n", argv[0]);
+            for (unsigned i = 1; i < argc; i++)
+                fprintf(logFile, "ARG-%-3u  %s\n", i, argv[i]);
+            fclose(logFile);
+ 
+            char** effectiveArgv = (char**)malloc((argc + 2) * sizeof(char*));
+            effectiveArgv[0] = (char*)EXECUTABLE;
+        memcpy(effectiveArgv + 1, argv + 1, (argc - 1) * sizeof(char*));
+            effectiveArgv[argc] = NULL;
+ 
+            return execv(effectiveArgv[0], effectiveArgv);
+        }
+EOF
+ 
+    if gcc /tmp/debug-redirect.cpp -lstdc++ -o /tmp/debug-redirect ; then
+        if [[ ! -f "$EXECUTABLE.debug-redirect-orig" ]] ; then
+            ln "$EXECUTABLE" "$EXECUTABLE.debug-redirect-orig"
+        fi
+        if mv -f /tmp/debug-redirect "$EXECUTABLE" ; then
+            rm -f /tmp/debug-redirect.cpp
+            echo "Done. All calls to "'"'"$EXECUTABLE"'"'" will be logged into "'"'"$LOG_FILE"'"'
+            echo "To revert - execute:     debug-redirect-bash -r"
+            echo '       Tip! Good to know: when Perl is calling Bash using `...shell script...`'
+            echo '        and the script is simple - for example `mkdir x` - then Perl performs it by itself, without calling bash!'
+        fi
+    fi
+    return 0
+}
