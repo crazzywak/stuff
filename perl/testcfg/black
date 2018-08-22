@@ -1,0 +1,8 @@
+ANALYSIS_STATUS
+FIREFLOW
+MONITOR_COLLECT_CKP
+java_bridge
+^/usr/share/fa/bin/fa_server -D -f REFRESH
+^/usr/share/fa/bin/collect_ckp -d /home/afa/algosec/monitor/
+^/usr/share/fa/bin/collect_ckp -t LOG
+^/usr/share/fa/bin/notification
