@@ -26,6 +26,29 @@ def makemp3s():
   	#tts.save('c:\\1\\normal\\' + match.group(2) + '.mp3')
 
 
+def addspanish():
+
+  v = io.open('c:\\cygwin64\\home\\yakir.dorani\\git\\mygithub\\stuff\\verbs.html',mode='r', encoding="utf-8")
+  f = io.open('c:\\1\\helloworld.html',mode='w', encoding="utf-8")
+  p = re.compile('verbo=.*?>(.*?)<')
+
+  for line in v.readlines():
+    print line
+    match = p.search(line)
+    verb = match.group(1)
+
+    print "found match " + verb
+
+    t = Translator()
+    t_es = t.translate(verb, dest="es", src="it")
+    translation = t_es.text
+
+    print "translation is " + translation
+    pos = line.rfind(',')
+    
+    f.write(line[:pos+2] + "<a href=http://www.spanishdict.com/conjugate/" + translation + ">" + translation + "</a> " + line[pos:])
+
+
 def fixgerman():
 
 	f = io.open('c:\\1\\helloworld.html',mode='w', encoding="utf-8")
@@ -66,7 +89,8 @@ def getitalian():
 def main():
     #getitalian()
     #fixgerman()
-    makemp3s()
+    #makemp3s()
+    addspanish()
 
 if __name__ == "__main__":
     sys.exit(main())

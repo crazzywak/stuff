@@ -12,6 +12,15 @@ $mkdircmd = "mkdir /test/output/" . $dirName;
 `$mkdircmd`;
 open($fh, '>', '/test/output/' . $dirName . "/" . $fileIndex);
 open($dh, '>', '/test/output/' . $dirName . "/index");
+
+if (! open(my $input, '<', '/test/cfg'))
+{
+  readline($input); # on or off, ignore
+  my $filter_level=readline($input); # filter level
+
+  close $input;
+}
+
 #open($filterh, '>', '/test/output/' . $dirName . "/filtered");
 
 # This is the important part.  The rest is just fluff.
@@ -27,8 +36,6 @@ sub DB::DB {
 #    ($p, $f, $l, $s) = caller(0);
 #  }
 
-  
-
   if ($f !~ m|^/usr/share/fa/bin|)
   {
 #    print $filterh "$f\n";
@@ -42,7 +49,10 @@ sub DB::DB {
 #    $lastSub = "";
   }
 
-  print $fh $l . "\n"
+  if ($filterlevel eq "line")
+  {
+    print $fh $l . "\n"
+  }
 
 #  if ($lastSub ne $s)
 #  {
@@ -53,7 +63,6 @@ sub DB::DB {
 #    }
 #  }
 }
-
 
 sub import {
   my $package = shift;

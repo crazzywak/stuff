@@ -1,3 +1,5 @@
+^#/usr/share/fa/bin/fa_master
+^#/usr/share/fa/bin/problems2html
 ^/usr/share/fa/bin/advisor
 ^/usr/share/fa/bin/analysis_post_process
 ^/usr/share/fa/bin/baseline_analysis
@@ -12,7 +14,6 @@
 ^/usr/share/fa/bin/collect_ckp
 ^/usr/share/fa/bin/compliance_report
 ^/usr/share/fa/bin/create_topology
-^#/usr/share/fa/bin/fa_master
 ^/usr/share/fa/bin/fa_counters
 ^/usr/share/fa/bin/fwahome
 ^/usr/share/fa/bin/fwaindex
@@ -24,7 +25,9 @@
 ^/usr/share/fa/bin/journal
 ^/usr/share/fa/bin/make_inside
 ^/usr/share/fa/bin/notification
-^#/usr/share/fa/bin/problems2html
+^/usr/share/fa/bin/pa2hash
+^/usr/share/fa/bin/pa2lmf
+^/usr/share/fa/bin/pa_rules
 ^/usr/share/fa/bin/query2xml
 ^/usr/share/fa/bin/route2hos
 ^/usr/share/fa/bin/rule_order_analysis
