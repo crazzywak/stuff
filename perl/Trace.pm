@@ -1,24 +1,28 @@
 # -*- perl -*-
 
 package Devel::Trace;
+
 $VERSION = '0.12';
 $TRACE = 1;
+$firstFileName = "___";
 $lastFileName = "___";
 $lastSub = "___";
 $fileIndex = 0;
-$dirName = `ls -1 /test/output/ | wc -l`;
+$dirName = `ls -1 /tmp/perlrecorder/output/ | wc -l`;
 chomp $dirName;
-$mkdircmd = "mkdir /test/output/" . $dirName;
+$mkdircmd = "mkdir /tmp/perlrecorder/output/" . $dirName;
 `$mkdircmd`;
-open($fh, '>', '/test/output/' . $dirName . "/" . $fileIndex);
-open($dh, '>', '/test/output/' . $dirName . "/index");
+open($fh, '>', '/tmp/perlrecorder/output/' . $dirName . "/" . $fileIndex);
+open($dh, '>', '/tmp/perlrecorder/output/' . $dirName . "/index");
 
-if (! open(my $input, '<', '/test/cfg'))
-{
-  readline($input); # on or off, ignore
-  my $filter_level=readline($input); # filter level
+open my $handle, '<', "/etc/opt/perlrecorder/whitem";
+chomp(my @white = <$handle>);
+close $handle;
 
-  close $input;
+my $regex = "";
+if (@white) {
+	$regex = join "|", @white; 
+	$regex = qr/\b($regex)\b/; 
 }
 
 #open($filterh, '>', '/test/output/' . $dirName . "/filtered");
@@ -27,42 +31,28 @@ if (! open(my $input, '<', '/test/cfg'))
 sub DB::DB {
   return unless $TRACE;
   my ($p, $f, $l) = caller;
-#  my ($p, $f, $l, $s) = caller(1);
+
+ #my ($p, $f, $l, $s) = caller(0);
+
   #my $code = \@{"::_<$f"};
   #print STDERR ">> $f:$l: $code->[$l]";
   
-#  if ($s eq "")
-#  {
-#    ($p, $f, $l, $s) = caller(0);
-#  }
+    if ($lastFileName eq "___") {
+   	$firstFileName = $f;
+   }
 
-  if ($f !~ m|^/usr/share/fa/bin|)
-  {
-#    print $filterh "$f\n";
-    return;
-  }
-  
-  if ($lastFileName ne $f) {
-    $fileIndex++;
-    print $dh "$f\n";
-    $lastFileName = $f;
-#    $lastSub = "";
-  }
+    if ($lastFileName ne $f) {
+      $fileIndex++;
+      print $dh "$f\n";
+      $lastFileName = $f;
+      $lastSub = "";
+   }
 
-  if ($filterlevel eq "line")
-  {
-    print $fh $l . "\n"
+  if ($f eq $firstFileName || ($regex && $lastFileName =~ m/$regex/ )) { 
+  	print $fh "$l\n";
   }
-
-#  if ($lastSub ne $s)
-#  {
-#    if ($s =~ /main::/)
-#    {
-#      print STDERR "$s\n";
-#      $lastSub = $s;
-#    }
-#  }
 }
+
 
 sub import {
   my $package = shift;
